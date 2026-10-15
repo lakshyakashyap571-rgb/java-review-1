@@ -1,0 +1,49 @@
+CREATE DATABASE IF NOT EXISTS recsys;
+USE recsys;
+
+CREATE TABLE users (
+  user_id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  email VARCHAR(120) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  role ENUM('ADMIN','USER') DEFAULT 'USER',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE items (
+  item_id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(150) NOT NULL,
+  category VARCHAR(60),
+  description TEXT
+);
+
+CREATE TABLE ratings (
+  user_id INT, item_id INT,
+  rating TINYINT CHECK (rating BETWEEN 1 AND 5),
+  rated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, item_id),
+  INDEX idx_ratings_item (item_id),
+  FOREIGN KEY (user_id) REFERENCES users(user_id),
+  FOREIGN KEY (item_id) REFERENCES items(item_id)
+);
+
+CREATE TABLE preferences (
+  user_id INT, category VARCHAR(60),
+  PRIMARY KEY (user_id, category),
+  FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+CREATE TABLE settings (          -- Admin system settings
+  setting_key VARCHAR(50) PRIMARY KEY,
+  setting_value VARCHAR(50)
+);
+INSERT INTO settings VALUES ('neighbour_count','3'),('min_similarity','0.1'),('min_common_items','2')
+  ON DUPLICATE KEY UPDATE setting_value = setting_value;
+
+CREATE TABLE recommendation_log (  -- used for Admin effectiveness analysis
+  log_id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT, item_id INT, predicted_score DOUBLE,
+  clicked BOOLEAN DEFAULT FALSE,
+  shown_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_log_user (user_id)
+);
